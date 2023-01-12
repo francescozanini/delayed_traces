@@ -2,14 +2,14 @@
 Delayed traces to cope with delay in RL
 
 
-# Setting
+## Setting
 
 There may be 2 options:
   1. Delay affects only the rewards, i.e., consequences in terms of the action taken are immediately experienced by the agent (already from next state) but reward for present transition is given with some delay.
   2. Delay affects both actions and rewards: if the agents chooses an action at time $t$, the corresponding transition actually happens after some time $t+d$, with respect to the state at time $t+d$.
 
 
-# Details about code
+## Details about code
 
 Delayed traces should work as the standard traces but being triggered after some time, corresponding to the delay. So the trace related with state-action pair $(s_t, a_t)$ is actually set to 1 at time $t+d$. This is however implemented in a different way, which is hopefully equivalent. Namely the state and actions are collected in a buffer and the update is done after $d$ times, when the correct transition is observed.
 ! This may be wrong. Do we want to update $(s_t, a_t)$ or $(s_{t+d}, a_{t+d})$?
