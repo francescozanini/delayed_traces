@@ -2,7 +2,7 @@
 Delayed traces to cope with delay in RL
 
 
-## Setting
+## Setting
 
 There may be 2 options:
   1. Delay affects only the rewards, i.e., consequences in terms of the action taken are immediately experienced by the agent (already from next state) but reward for present transition is given with some delay.
