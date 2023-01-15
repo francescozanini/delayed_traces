@@ -19,4 +19,6 @@ As a start, setting $1$ is considered. \
 So far a simple grid world is implemented where an agent and a goal are randomly initialised. Actions corresponds to cardinal points plus a dummy action with which the agent stays. Reward is $0$ for each transition, except if the goal is met, in which case the reward is $10$. \
 HPs are basically thrown at random. \
 \
-Surely the code is wrong somewhere as performance are strictly worse with the additional information of the delay.
+Surely the code is wrong somewhere as performance are strictly worse with the additional information of the delay. \
+\
+UPDATE: Fixed replacing traces. Currently $(s_t, a_t)$ gets updated, $d$ steps after it occurred, with the correct reward. Slightly better than standard traces!
