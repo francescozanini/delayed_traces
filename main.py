@@ -23,7 +23,7 @@ for x in range(xdim):
 
 traces = np.zeros((xdim, ydim, num_actions))
 
-storing_rewards = []
+storing_rewards = np.empty((num_episodes, env.get_max_steps()))
 for episode in trange(num_episodes):
     state = env.reset()
     # eps-greedy action
@@ -36,7 +36,7 @@ for episode in trange(num_episodes):
     done = False
     while not done:
         state_next, reward, done = env.step(action)
-        storing_rewards.append(reward)
+        storing_rewards[episode, env.get_step()-1] = reward
         # replacing trace
         traces[(*state, action)] = 1
         #
@@ -67,7 +67,7 @@ for x in range(xdim):
 
 del_traces = np.zeros((xdim, ydim, num_actions))
 
-del_storing_rewards = []
+del_storing_rewards = np.empty((num_episodes, env.get_max_steps()))
 for episode in trange(num_episodes):
     state_buffer = deque()
     action_buffer = deque()
@@ -84,10 +84,7 @@ for episode in trange(num_episodes):
     done = False
     while not done:
         state_next, reward, done = env.step(action)
-        del_storing_rewards.append(reward)
-        # replacing trace
-        del_traces[(*state, action)] = 1
-        #
+        del_storing_rewards[episode, env.get_step()-1] = reward
         # eps-greedy action
         draw = np.random.uniform(0, 1)
         if draw < epsilon:
@@ -102,6 +99,9 @@ for episode in trange(num_episodes):
             action_delayed = action_buffer.popleft()
             state_next_delayed = state_buffer[0]
             action_next_delayed = action_buffer[0]
+            # replacing trace
+            del_traces[(*state_delayed, action_delayed)] = 1
+            #
             # update q
             q = q + del_traces*learning_rate*(reward + gamma*q[(*state_next_delayed, action_next_delayed)] -
                                           q[(*state_delayed, action_delayed)])
