@@ -4,16 +4,22 @@ from collections import deque
 
 class Grid:
 
-    def __init__(self, xlim, ylim, pacman_effect=True, delay=5, max_steps=10_000):
+    def __init__(self, xlim, ylim, pacman_effect=True, delay=5, max_steps=10_000, delayed_actions=False):
         self.xlim = xlim
         self.ylim = ylim
         self.goal = None
         self.agent = None
         self.pacman_effect = pacman_effect
         self.delay = delay
-        self.rewards_buffer = deque()
-        for i in range(self.delay):
-            self.rewards_buffer.append(0)  # reward for the initial steps in which no actual rewards are given
+        self.delayed_actions = delayed_actions
+        if delayed_actions:
+            self.actions_buffer = deque()
+            for i in range(self.delay):  # reward of actions must be the same as delay of reward
+                self.actions_buffer.append(4)  # filling the buffer with 'idle' action
+        else:
+            self.rewards_buffer = deque()
+            for i in range(self.delay):
+                self.rewards_buffer.append(0)  # reward for the initial steps in which no actual rewards are given
         if max_steps is not None:
             self.max_steps = max_steps
             self.steps = 0
@@ -51,8 +57,14 @@ class Grid:
     def get_step(self):
         return self.steps
 
+    def get_delay(self):
+        return self.delay
+
     def step(self, action):
         self.steps += 1
+        if self.delayed_actions:
+            self.actions_buffer.append(action)
+            action = self.actions_buffer.popleft()
         if action == 0:  # LEFT
             self.agent[1] -= 1
             if self.pacman_effect:
@@ -90,7 +102,9 @@ class Grid:
         reward = 0
         if self.agent == self.goal:
             reward = 10
-        self.rewards_buffer.append(reward)
+        if not self.delayed_actions:
+            self.rewards_buffer.append(reward)
+            reward = self.rewards_buffer.popleft()
         if self.steps >= self.max_steps:
             self.flag = True
-        return tuple(self.get_agent()), self.rewards_buffer.popleft(), self.flag
+        return tuple(self.get_agent()), reward, self.flag

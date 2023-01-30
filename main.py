@@ -5,33 +5,35 @@ import pickle
 
 xdim = 5
 ydim = 5
-env = Grid(xdim, ydim)
+env = Grid(xdim, ydim, max_steps=20_000)
 num_actions = env.get_action_space()
-epsilon = 0.05
-learning_rate = 0.05
+epsilon_0 = 3
+learning_rate = 0.15
 lamb = 0.9
 gamma = 0.95
 num_episodes = 1_000
 
 
 # Standard approach
-
-q = np.zeros((xdim, ydim, num_actions))
-for x in range(xdim):
-    for y in range(ydim):
-        q[x, y] = [np.random.uniform(0, 1) for i in range(num_actions)]  # induce exploration
-
-traces = np.zeros((xdim, ydim, num_actions))
+seed = 42
+np.random.seed(seed)
 
 storing_rewards = np.empty((num_episodes, env.get_max_steps()))
 for episode in trange(num_episodes):
+
+    # Build q_table
+    q = np.zeros((xdim, ydim, num_actions))
+    for x in range(xdim):
+        for y in range(ydim):
+            q[x, y] = [np.random.uniform(0, 1) for i in range(num_actions)]  # induce exploration
+
+    # Re-initialise traces every episode
+    traces = np.zeros((xdim, ydim, num_actions))
+
     state = env.reset()
-    # eps-greedy action
+    # random action (epsilon>1 in I step)
     draw = np.random.uniform(0, 1)
-    if draw < epsilon:
-        action = np.random.randint(num_actions)
-    else:
-        action = np.argmax(q[state])
+    action = np.random.randint(num_actions)
     #
     done = False
     while not done:
@@ -41,6 +43,7 @@ for episode in trange(num_episodes):
         traces[(*state, action)] = 1
         #
         # eps-greedy action
+        epsilon = epsilon_0 / np.sqrt(env.get_step())  # decaying exploration (already updated step)
         draw = np.random.uniform(0, 1)
         if draw < epsilon:
             action_next = np.random.randint(num_actions)
@@ -59,25 +62,25 @@ for episode in trange(num_episodes):
 
 
 # DELAYED TRACES
-
-del_q = np.zeros((xdim, ydim, num_actions))
-for x in range(xdim):
-    for y in range(ydim):
-        del_q[x, y] = [np.random.uniform(0, 1) for i in range(num_actions)]  # induce exploration
-
-del_traces = np.zeros((xdim, ydim, num_actions))
+seed = 42
+np.random.seed(seed)
 
 del_storing_rewards = np.empty((num_episodes, env.get_max_steps()))
 for episode in trange(num_episodes):
+
+    # Build delayed q_table
+    del_q = np.zeros((xdim, ydim, num_actions))
+    for x in range(xdim):
+        for y in range(ydim):
+            del_q[x, y] = [np.random.uniform(0, 1) for i in range(num_actions)]  # induce exploration
+
+    del_traces = np.zeros((xdim, ydim, num_actions))
+
     state_buffer = deque()
     action_buffer = deque()
     state = env.reset()
-    # eps-greedy action
-    draw = np.random.uniform(0, 1)
-    if draw < epsilon:
-        action = np.random.randint(num_actions)
-    else:
-        action = np.argmax(q[state])
+    # random action (epsilon>1 in I step)
+    action = np.random.randint(num_actions)
     #
     state_buffer.append(state)
     action_buffer.append(action)
@@ -86,6 +89,7 @@ for episode in trange(num_episodes):
         state_next, reward, done = env.step(action)
         del_storing_rewards[episode, env.get_step()-1] = reward
         # eps-greedy action
+        epsilon = epsilon_0 / np.sqrt(env.get_step())  # decaying exploration (already updated step)
         draw = np.random.uniform(0, 1)
         if draw < epsilon:
             action_next = np.random.randint(num_actions)
@@ -94,7 +98,7 @@ for episode in trange(num_episodes):
         #
         state_buffer.append(state_next)
         action_buffer.append(action_next)
-        if env.get_step() > 4:
+        if env.get_step() >= env.get_delay():
             state_delayed = state_buffer.popleft()
             action_delayed = action_buffer.popleft()
             state_next_delayed = state_buffer[0]
