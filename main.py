@@ -94,11 +94,11 @@ for episode in trange(num_episodes):
         if draw < epsilon:
             action_next = np.random.randint(num_actions)
         else:
-            action_next = np.argmax(q[state_next])
+            action_next = np.argmax(del_q[state_next])
         #
         state_buffer.append(state_next)
         action_buffer.append(action_next)
-        if env.get_step() >= env.get_delay():
+        if env.get_step() > env.get_delay():
             state_delayed = state_buffer.popleft()
             action_delayed = action_buffer.popleft()
             state_next_delayed = state_buffer[0]
@@ -106,9 +106,9 @@ for episode in trange(num_episodes):
             # replacing trace
             del_traces[(*state_delayed, action_delayed)] = 1
             #
-            # update q
-            q = q + del_traces*learning_rate*(reward + gamma*q[(*state_next_delayed, action_next_delayed)] -
-                                          q[(*state_delayed, action_delayed)])
+            # update del_q
+            del_q = del_q + del_traces*learning_rate*(reward + gamma*del_q[(*state_next_delayed, action_next_delayed)] -
+                                          del_q[(*state_delayed, action_delayed)])
             #
             # replacing trace
             del_traces *= lamb*gamma
